@@ -15,6 +15,18 @@ Future<void> runCheckout(BuildContext context) async {
   final auth = context.read<AuthModel>();
   if (cart.cart.items.isEmpty) return;
 
+  // Sign-in is mandatory to place an order.
+  if (!auth.isSignedIn) {
+    final ok = await auth.signIn();
+    if (!context.mounted) return;
+    if (!ok || !auth.isSignedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in with Google to place your order')),
+      );
+      return;
+    }
+  }
+
   final details = await showModalBottomSheet<_Details>(
     context: context,
     isScrollControlled: true,
