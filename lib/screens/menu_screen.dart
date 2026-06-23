@@ -17,6 +17,7 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> {
   String _query = '';
   bool _availableOnly = false;
+  String? _category;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,11 @@ class _MenuScreenState extends State<MenuScreen> {
       );
     }
 
+    final categories =
+        model.menu.map((i) => i.category).whereType<String>().toSet().toList()..sort();
+
     var items = model.menu;
+    if (_category != null) items = items.where((i) => i.category == _category).toList();
     if (_availableOnly) items = items.where((i) => i.sellable).toList();
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
@@ -65,13 +70,22 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              _filterChip('All', !_availableOnly, () => setState(() => _availableOnly = false)),
+              _filterChip('All', _category == null && !_availableOnly,
+                  () => setState(() { _category = null; _availableOnly = false; })),
               const SizedBox(width: 8),
-              _filterChip('Available now', _availableOnly, () => setState(() => _availableOnly = true)),
+              _filterChip('Available now', _availableOnly,
+                  () => setState(() => _availableOnly = !_availableOnly)),
+              for (final c in categories) ...[
+                const SizedBox(width: 8),
+                _filterChip(c, _category == c,
+                    () => setState(() => _category = _category == c ? null : c)),
+              ],
             ],
           ),
         ),

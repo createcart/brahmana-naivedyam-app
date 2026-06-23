@@ -19,6 +19,7 @@ class CartScreen extends StatelessWidget {
     final t = cart.totals;
 
     return Scaffold(
+      bottomNavigationBar: const PoweredByBar(),
       appBar: AppBar(
         title: const Text('Your Cart'),
         actions: [

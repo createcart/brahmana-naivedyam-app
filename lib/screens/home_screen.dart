@@ -119,12 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         controller: _pager,
                         onPageChanged: (i) => setState(() => _page = i),
                         itemCount: _slides.length,
-                        itemBuilder: (_, i) => Image.asset(
-                          _slides[i],
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                              color: Brand.warmWhite,
-                              child: const Icon(Icons.image_not_supported_outlined, color: Brand.muted)),
+                        itemBuilder: (_, i) => Container(
+                          color: Brand.cream,
+                          child: Image.asset(
+                            _slides[i],
+                            fit: BoxFit.contain, // show the whole image — never crop
+                            errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.image_not_supported_outlined, color: Brand.muted)),
+                          ),
                         ),
                       ),
               ),

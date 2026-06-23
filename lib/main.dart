@@ -58,18 +58,20 @@ class _RootShellState extends State<RootShell> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: Row(
+        title: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _index = 0), // tap logo/brand -> Home
+          child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(colors: [Brand.saffron, Brand.marigold]),
                 border: Border.all(color: Brand.marigold, width: 2),
               ),
-              alignment: Alignment.center,
-              child: const Text('🙏', style: TextStyle(fontSize: 18)),
+              child: Image.asset('assets/logo.jpg', fit: BoxFit.cover),
             ),
             const SizedBox(width: 10),
             const Column(
@@ -83,6 +85,7 @@ class _RootShellState extends State<RootShell> {
               ],
             ),
           ],
+          ),
         ),
         actions: [
           const _AccountAction(),
@@ -106,13 +109,19 @@ class _RootShellState extends State<RootShell> {
         ),
         child: KeyedSubtree(key: ValueKey(_index), child: pages[_index]),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.restaurant_menu_outlined), selectedIcon: Icon(Icons.restaurant_menu), label: 'Menu'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const PoweredByBar(),
+          NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) => setState(() => _index = i),
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+              NavigationDestination(icon: Icon(Icons.restaurant_menu_outlined), selectedIcon: Icon(Icons.restaurant_menu), label: 'Menu'),
+              NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
+            ],
+          ),
         ],
       ),
     );

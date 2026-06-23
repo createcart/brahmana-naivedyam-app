@@ -144,6 +144,29 @@ class CartBadge extends StatelessWidget {
   }
 }
 
+/// Slim "Powered by CreateCart" strip shown on every page.
+class PoweredByBar extends StatelessWidget {
+  const PoweredByBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Brand.cream,
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.shopping_bag_outlined, size: 13, color: Brand.muted),
+          SizedBox(width: 5),
+          Text('Powered by ', style: TextStyle(color: Brand.muted, fontSize: 11.5)),
+          Text('CreateCart',
+              style: TextStyle(color: Brand.saffron, fontSize: 11.5, fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+}
+
 /// A friendly empty / error state.
 class InfoState extends StatelessWidget {
   final IconData icon;
