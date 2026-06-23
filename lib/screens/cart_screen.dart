@@ -36,7 +36,7 @@ class CartScreen extends StatelessWidget {
               title: 'Your cart is empty',
               subtitle: 'Add something tasty 🍛',
               action: FilledButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, 'menu'),
                 child: const Text('Browse the menu'),
               ),
             )

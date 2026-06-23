@@ -91,9 +91,12 @@ class _RootShellState extends State<RootShell> {
           const _AccountAction(),
           CartBadge(
             count: count,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CartScreen()),
-            ),
+            onTap: () async {
+              final r = await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+              if (r == 'menu' && mounted) setState(() => _index = 1);
+            },
           ),
           const SizedBox(width: 4),
         ],
