@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
@@ -31,25 +30,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadSlides() async {
-    // Reuse the website's hero images via its manifest (same assets, no bundling).
+    // Bundled hero images (assets/slider/) — works offline, no website dependency.
+    // To add a slide: drop the image in assets/slider/ and list it in manifest.json.
     const fallback = [
       '01-banner.png', '02-coming-soon.png', '04-menu.png', '05-upma.png',
     ];
     List<String> names = fallback;
     try {
-      final r = await http
-          .get(Uri.parse('${AppConfig.siteBase}/img/slider/manifest.json'))
-          .timeout(const Duration(seconds: 6));
-      if (r.statusCode == 200) {
-        final list = jsonDecode(r.body);
-        if (list is List && list.isNotEmpty) {
-          names = list.map((e) => e.toString()).toList();
-        }
+      final raw = await rootBundle.loadString('assets/slider/manifest.json');
+      final list = jsonDecode(raw);
+      if (list is List && list.isNotEmpty) {
+        names = list.map((e) => e.toString()).toList();
       }
     } catch (_) {}
     if (!mounted) return;
-    setState(() => _slides =
-        names.map((n) => '${AppConfig.siteBase}/img/slider/$n').toList());
+    setState(() => _slides = names.map((n) => 'assets/slider/$n').toList());
     _startAuto();
   }
 
@@ -121,12 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         controller: _pager,
                         onPageChanged: (i) => setState(() => _page = i),
                         itemCount: _slides.length,
-                        itemBuilder: (_, i) => CachedNetworkImage(
-                          imageUrl: _slides[i],
+                        itemBuilder: (_, i) => Image.asset(
+                          _slides[i],
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: Brand.warmWhite),
-                          errorWidget: (_, __, ___) =>
-                              Container(color: Brand.warmWhite, child: const Icon(Icons.image_not_supported_outlined, color: Brand.muted)),
+                          errorBuilder: (_, __, ___) => Container(
+                              color: Brand.warmWhite,
+                              child: const Icon(Icons.image_not_supported_outlined, color: Brand.muted)),
                         ),
                       ),
               ),
