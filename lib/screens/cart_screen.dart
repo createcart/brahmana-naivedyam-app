@@ -7,6 +7,7 @@ import '../cart_model.dart';
 import '../config.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'checkout.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -126,22 +127,26 @@ class CartScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => _checkout(context, model),
+              onPressed: () => runCheckout(context),
               icon: const Icon(Icons.lock_outline, size: 18),
               label: const Text('Proceed to checkout'),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text('Secure payment via Razorpay · arriving in the next update',
+          const SizedBox(height: 6),
+          TextButton.icon(
+            onPressed: () => _whatsappOrder(context, model),
+            icon: const Icon(Icons.chat, size: 16, color: Brand.leaf),
+            label: const Text('or order on WhatsApp', style: TextStyle(color: Brand.leaf)),
+          ),
+          const Text('Secure payment via Razorpay',
               style: TextStyle(color: Brand.muted, fontSize: 11.5)),
         ],
       ),
     );
   }
 
-  // v1: online payment/sign-in arrive in phase 2. Bridge to WhatsApp ordering
-  // (mirrors the website's "launching soon — book on WhatsApp" flow).
-  void _checkout(BuildContext context, CartModel model) {
+  // Alternative to in-app payment: send the cart on WhatsApp.
+  void _whatsappOrder(BuildContext context, CartModel model) {
     final lines = model.cart.items
         .map((l) => '• ${l.quantity}× ${l.name} (${rupees(l.lineTotal)})')
         .join('\n');
@@ -155,14 +160,14 @@ class CartScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.rocket_launch_rounded, size: 44, color: Brand.marigold),
+            const Icon(Icons.chat_rounded, size: 44, color: Brand.leaf),
             const SizedBox(height: 12),
-            Text('Online ordering is launching soon',
+            Text('Order on WhatsApp',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 6),
             const Text(
-              'Sign in + Razorpay payment land in the next update. For now, send your cart on WhatsApp and we\'ll deliver to your location.',
+              'Prefer chat? Send your cart on WhatsApp and we\'ll confirm and deliver to your location.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Brand.muted),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../api.dart';
+import '../auth_model.dart';
 import '../cart_model.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -24,109 +25,141 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  final _ctrl = TextEditingController();
-  Map<String, dynamic>? _order;
+  List<Map<String, dynamic>> _orders = [];
   bool _loading = false;
   String? _error;
+  String? _loadedFor; // id token we last loaded for
 
-  Future<void> _track() async {
-    final id = _ctrl.text.trim();
-    if (id.isEmpty) return;
+  Future<void> _loadHistory(String token) async {
     setState(() {
       _loading = true;
       _error = null;
-      _order = null;
     });
     try {
-      final api = CreateCartApi(cartId: 'track'); // cart id unused for delivery read
-      final data = await api.getDelivery(id);
-      setState(() => _order = (data as Map).cast<String, dynamic>());
+      final api = context.read<CartModel>().api;
+      final list = await api.myOrders(token);
+      list.sort((a, b) => (b['created_at'] ?? '').toString().compareTo((a['created_at'] ?? '').toString()));
+      if (mounted) setState(() => _orders = list);
     } catch (e) {
-      setState(() => _error = e is ApiException && e.status == 404
-          ? "No order found with that id."
-          : "Couldn't fetch that order.");
+      if (mounted) {
+        setState(() => _error = e is ApiException && e.status == 401
+            ? 'Your session expired — sign in again.'
+            : "Couldn't load your orders.");
+      }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthModel>();
+
+    // Load (once) when signed in / token changes.
+    if (auth.isSignedIn && auth.idToken != _loadedFor) {
+      _loadedFor = auth.idToken;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory(auth.idToken!));
+    }
+    if (!auth.isSignedIn) _loadedFor = null;
+
+    return RefreshIndicator(
+      color: Brand.saffron,
+      onRefresh: () async {
+        if (auth.isSignedIn) await _loadHistory(auth.idToken!);
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text('My Orders', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          if (!auth.isSignedIn)
+            _signInGate(auth)
+          else if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: CircularProgressIndicator(color: Brand.saffron)),
+            )
+          else if (_error != null)
+            InfoState(icon: Icons.error_outline, title: _error!)
+          else if (_orders.isEmpty)
+            const InfoState(
+                icon: Icons.receipt_long_outlined,
+                title: 'No orders yet',
+                subtitle: 'Your paid orders will appear here.')
+          else
+            ..._orders.map((o) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _OrderCard(o),
+                )),
+          const SizedBox(height: 8),
+          const Divider(color: Brand.border),
+          const SizedBox(height: 8),
+          _trackByIdHint(),
+        ],
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // touch the model so the tab rebuilds consistently
-    context.watch<CartModel>();
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Track your order', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        const Text('Enter your order id to see live status.',
-            style: TextStyle(color: Brand.muted)),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _ctrl,
-                onSubmitted: (_) => _track(),
-                decoration: InputDecoration(
-                  hintText: 'Order id',
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Brand.border)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Brand.saffron)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            FilledButton(onPressed: _track, child: const Text('Track')),
-          ],
-        ),
-        const SizedBox(height: 20),
-        if (_loading) const Center(child: CircularProgressIndicator(color: Brand.saffron)),
-        if (_error != null)
-          InfoState(icon: Icons.error_outline, title: _error!),
-        if (_order != null) _tracker(_order!),
-        const SizedBox(height: 28),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Brand.leafLight,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Row(
+  Widget _signInGate(AuthModel auth) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
             children: [
-              Icon(Icons.login, color: Brand.leaf),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sign in with Google to see all your past orders — coming in the next update.',
-                  style: TextStyle(color: Brand.inkSoft, fontSize: 13),
-                ),
+              const Icon(Icons.login, size: 48, color: Brand.marigold),
+              const SizedBox(height: 12),
+              Text('Sign in to see your orders',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              const Text('Use the Google account you order with.',
+                  textAlign: TextAlign.center, style: TextStyle(color: Brand.muted)),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: auth.busy
+                    ? null
+                    : () async {
+                        final ok = await auth.signIn();
+                        if (!ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Sign-in cancelled or not configured')),
+                          );
+                        }
+                      },
+                icon: auth.busy
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.account_circle),
+                label: const Text('Sign in with Google'),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
+      );
 
-  Widget _tracker(Map<String, dynamic> o) {
+  Widget _trackByIdHint() => const Text(
+        'Tip: pull down to refresh. Orders are tied to your Google account.',
+        style: TextStyle(color: Brand.muted, fontSize: 12),
+      );
+}
+
+class _OrderCard extends StatefulWidget {
+  final Map<String, dynamic> o;
+  const _OrderCard(this.o);
+  @override
+  State<_OrderCard> createState() => _OrderCardState();
+}
+
+class _OrderCardState extends State<_OrderCard> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final o = widget.o;
     final status = (o['status'] ?? 'placed').toString();
     final cancelled = status == 'cancelled';
     final idx = _flow.indexOf(status);
-    final timeline = (o['timeline'] is List) ? o['timeline'] as List : const [];
-    final fullId = o['id'].toString();
+    final fullId = (o['id'] ?? '').toString();
     final shortId = fullId.length > 6 ? fullId.substring(fullId.length - 6) : fullId;
+    final items = (o['items'] is List) ? o['items'] as List : const [];
+    final amount = o['amount'];
 
     return Card(
       child: Padding(
@@ -137,8 +170,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Order #$shortId',
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text('Order #$shortId', style: const TextStyle(fontWeight: FontWeight.w800)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -152,7 +184,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            if (amount != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(rupees((amount is num) ? amount : double.tryParse('$amount') ?? 0),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              ),
+            const SizedBox(height: 12),
             if (cancelled)
               const Text('This order was cancelled.',
                   style: TextStyle(color: Brand.tomato, fontWeight: FontWeight.w700))
@@ -164,44 +202,38 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     child: Column(
                       children: [
                         CircleAvatar(
-                          radius: 13,
+                          radius: 12,
                           backgroundColor: done ? Brand.leaf : const Color(0xFFE5E0D5),
-                          child: Icon(done ? Icons.check : Icons.circle,
-                              size: 12, color: Colors.white),
-                        ).animate(target: done ? 1 : 0).scale(
-                            begin: const Offset(0.7, 0.7), curve: Curves.elasticOut),
+                          child: Icon(done ? Icons.check : Icons.circle, size: 11, color: Colors.white),
+                        ).animate(target: done ? 1 : 0).scale(begin: const Offset(0.7, 0.7), curve: Curves.elasticOut),
                         const SizedBox(height: 4),
                         Text(_labels[_flow[i]]!,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                fontSize: 9.5,
-                                color: done ? Brand.ink : Brand.muted,
+                                fontSize: 9, color: done ? Brand.ink : Brand.muted,
                                 fontWeight: done ? FontWeight.w700 : FontWeight.w500)),
                       ],
                     ),
                   );
                 }),
               ),
-            if (timeline.isNotEmpty) ...[
-              const Divider(height: 22, color: Brand.border),
-              for (final e in timeline.reversed)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 96,
-                        child: Text(_labels[(e['status'] ?? '').toString()] ?? '${e['status']}',
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                      ),
-                      Expanded(
-                        child: Text('${e['at'] ?? ''}${e['note'] != null ? ' — ${e['note']}' : ''}',
-                            style: const TextStyle(color: Brand.muted, fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                ),
+            if (items.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 32)),
+                onPressed: () => setState(() => _open = !_open),
+                child: Text(_open ? 'Hide items' : 'View items (${items.length})',
+                    style: const TextStyle(color: Brand.saffron)),
+              ),
+              if (_open)
+                ...items.map((it) {
+                  final m = (it as Map).cast<String, dynamic>();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text('${m['quantity']}× ${m['name']}',
+                        style: const TextStyle(color: Brand.muted, fontSize: 13)),
+                  );
+                }),
             ],
           ],
         ),

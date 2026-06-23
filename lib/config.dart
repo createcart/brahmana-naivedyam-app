@@ -22,4 +22,11 @@ class AppConfig {
   /// Contact.
   static const String phone = '+917675856767';
   static const String whatsapp = '917675856767';
+
+  /// Google OAuth WEB client id — used as `serverClientId` so the ID token's
+  /// audience matches what the API verifies (same client id as the website).
+  /// NOTE: native sign-in also needs an *Android* OAuth client in Google Cloud
+  /// with this app's package (in.createcart.brahmana_app) + debug SHA-1.
+  static const String googleServerClientId =
+      '681891136142-1771tiovlhm52l2sut12jj21459d26ck.apps.googleusercontent.com';
 }

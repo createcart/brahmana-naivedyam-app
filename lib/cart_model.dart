@@ -48,6 +48,16 @@ class CartModel extends ChangeNotifier {
     }
   }
 
+  /// Exposed for the checkout flow (checkout / verifyPayment use the same cart).
+  CreateCartApi get api => _api;
+
+  Future<void> reloadCart() async {
+    try {
+      cart = await _api.getCart();
+      notifyListeners();
+    } catch (_) {}
+  }
+
   int qtyOf(String itemId) {
     for (final l in cart.items) {
       if (l.itemId == itemId) return l.quantity;

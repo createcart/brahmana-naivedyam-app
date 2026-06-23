@@ -37,6 +37,9 @@ class CreateCartApi {
             body: body == null ? null : jsonEncode(body)),
       );
 
+  Future<dynamic> _getAuthed(Uri u, String token) async =>
+      _handle(await http.get(u, headers: {'Accept': 'application/json', 'X-Auth-Token': token}));
+
   dynamic _handle(http.Response r) {
     if (r.statusCode >= 200 && r.statusCode < 300) {
       return r.body.isEmpty ? null : jsonDecode(r.body);
@@ -71,7 +74,41 @@ class CreateCartApi {
 
   Future<void> clearCart() => _post(_c('/clear'));
 
+  // ── checkout / payment (Phase 2) ───────────────────────────────
+  /// Price the cart server-side and create a payment order.
+  /// Returns {provider, key_id, order_id, amount(paise), currency, name, ...}.
+  Future<Map<String, dynamic>> checkout() async =>
+      (await _post(_c('/checkout')) as Map).cast<String, dynamic>();
+
+  /// Verify a completed payment; links to the account when [idToken] is given.
+  /// Returns {status:'paid', delivery_order_id, amount, ...}.
+  Future<Map<String, dynamic>> verifyPayment({
+    required String orderId,
+    required String paymentId,
+    required String signature,
+    Map<String, dynamic>? customer,
+    String? idToken,
+  }) async =>
+      (await _post(_u('/payments/verify'), {
+        'order_id': orderId,
+        'payment_id': paymentId,
+        'signature': signature,
+        if (customer != null) 'customer': customer,
+        if (idToken != null) 'id_token': idToken,
+      }) as Map)
+          .cast<String, dynamic>();
+
+  // ── customer auth + history (Phase 2) ──────────────────────────
+  Future<Map<String, dynamic>> googleLogin(String idToken) async =>
+      (await _post(Uri.parse('$base/api/auth/google'), {'id_token': idToken}) as Map)
+          .cast<String, dynamic>();
+
+  Future<List<Map<String, dynamic>>> myOrders(String idToken) async {
+    final data = await _getAuthed(_u('/my-orders'), idToken);
+    return (data as List).map((e) => (e as Map).cast<String, dynamic>()).toList();
+  }
+
   // ── delivery tracking (used by Orders once an order exists) ─────
-  Future<dynamic> getDelivery(String orderId) =>
-      _get(_u('/deliveries/$orderId'));
+  Future<Map<String, dynamic>> getDelivery(String orderId) async =>
+      (await _get(_u('/deliveries/$orderId')) as Map).cast<String, dynamic>();
 }
