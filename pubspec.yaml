@@ -1,5 +1,5 @@
-name: brahmana_app
-description: Brahmana Naivedyam storefront — Flutter client for the CreateCart API.
+name: brahmana_naivedyam_app
+description: Brahmana Naivedyam storefront — Flutter app on the CreateCart API.
 publish_to: 'none'
 version: 1.0.0+1
 

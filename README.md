@@ -1,77 +1,72 @@
-# Brahmana Naivedyam — Flutter app
+# Brahmana Naivedyam — Mobile App
 
-The **Brahmana Naivedyam** storefront as a native mobile app (Flutter), using the
-**same architecture and database** as the website: a thin client over the shared
-[`createcart-api`](https://github.com/createcart/createcart-api), which talks to
-the same Supabase Postgres. No new backend — same menu, same data.
+The **Brahmana Naivedyam** (బ్రాహ్మణ నైవేద్యం) storefront as a native **Flutter**
+app for Android. It's a thin client over the **same backend and database as the
+website** — the shared [`createcart-api`](https://github.com/createcart/createcart-api)
+on Supabase Postgres. Same menu, same orders, no new backend.
 
 ```
-Flutter app ──HTTP──► createcart-api ──► Supabase (Postgres)
- (this repo)          (shared service)     (same data as the website)
+Flutter app ──HTTPS──► createcart-api ──► Supabase (Postgres)
+ (this repo)           (shared service)     (same data as the website)
 ```
 
-## What's in v1 (core)
-- **Home** — auto-scrolling hero slider (reuses the website's slider images via its
-  `manifest.json`), brand, Call / WhatsApp contact.
-- **Menu** — live items from the API, search + "Available now" filter, **optimistic
-  add / +/−** (instant UI, reconciles in the background), loading **shimmer**.
-- **Cart** — line items, live totals, quantity steppers; checkout bridges to
-  **WhatsApp ordering** for now (mirrors the website's "launching soon" flow).
-- **Orders** — track any order by id via the delivery API (live status + timeline).
-- Material 3 theme in the brand palette, animations throughout (`flutter_animate`).
-
-## Phase 2 (next pass)
-- Google sign-in (native), **MSG91 OTP**, **Razorpay** payment, signed-in
-  **order history** (`/my-orders`). The API + data already support these.
+## Features
+- **Home** — auto-scrolling hero (bundled, never cropped), brand, Call / WhatsApp, tappable logo → Home, "Write a Review" → Google.
+- **Menu** — live items from the API, search + **category filters** + "Available now", **optimistic add / +/−** (instant), shimmer loading.
+- **Cart** — line items, live totals, quantity steppers; checkout or order on WhatsApp.
+- **Checkout** — delivery details with a **location picker**: *Use my current location* (GPS) or **map search** (OpenStreetMap), pinned lat/lng sent with the order. **Razorpay** payment (test mode).
+- **Sign in with Google** (native) — account menu in the app bar.
+- **Orders** — your past orders + live status timeline (signed in).
+- Material 3 brand theme, animations throughout, branded launcher icon + splash, "Powered by CreateCart" on every page.
 
 ## Project layout
 ```
 lib/
-├─ config.dart        # API base, tenant, contact (the only thing to edit per env)
-├─ theme.dart         # brand palette + Material 3 theme
-├─ models.dart        # MenuItem, CartView, CartLine, CartTotals (API JSON)
-├─ api.dart           # CreateCartApi — Dart twin of the web CreateCart.Store
-├─ cart_model.dart    # ChangeNotifier: menu + cart + optimistic ops
-├─ widgets.dart       # shimmer, qty stepper, animated cart badge, states
-├─ main.dart          # app + nav shell (app bar + bottom nav)
-└─ screens/           # home / menu / cart / orders
+├─ config.dart          # API base, tenant, contact, review URL (edit per env)
+├─ theme.dart           # brand palette + Material 3 theme
+├─ models.dart          # MenuItem / CartView / CartLine / CartTotals
+├─ api.dart             # CreateCartApi — Dart twin of the web CreateCart.Store
+├─ cart_model.dart      # menu + cart + optimistic ops (ChangeNotifier)
+├─ auth_model.dart      # Google sign-in (serverClientId = web client id)
+├─ payment_service.dart # Razorpay wrapper (callback API → Future)
+├─ location_service.dart# GPS (geolocator) + Nominatim search / reverse-geocode
+├─ widgets.dart         # shimmer, qty stepper, cart badge, Powered-by bar, states
+├─ main.dart            # app + nav shell (app bar + bottom nav)
+└─ screens/             # home / menu / cart / checkout / orders
+assets/
+├─ slider/              # hero images + manifest.json
+├─ logo.jpg             # in-app brand logo
+└─ logo_icon.png        # source for launcher icon + splash
 ```
 
 ## Run it
-**Prerequisites:** [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.3+),
-Android Studio + Android SDK, and an emulator or a USB device.
+**Prerequisites:** Flutter **3.22+** (this was built on 3.44), Android Studio + Android SDK,
+**JDK 17+**, and an emulator or USB device.
 
 ```bash
-cd D:\createcart\brahmana-app
-
-# 1. generate the native platform folders (this repo ships only lib/ + pubspec;
-#    flutter create preserves your lib/ and pubspec.yaml, it just adds android/ ios/)
-flutter create --platforms=android,ios --org in.createcart .
-
-# 2. dependencies
 flutter pub get
-
-# 3. run on a connected device / emulator
-flutter run
+flutter run                 # on a connected device / emulator
+flutter build apk --release # → build/app/outputs/flutter-apk/app-release.apk
 ```
 
-To build an installable APK: `flutter build apk --release` → `build/app/outputs/flutter-apk/app-release.apk`.
+It defaults to the **production** API, so it works on a real device over Wi‑Fi/data
+out of the box. For a local API, edit `AppConfig.apiBase` in `lib/config.dart`
+(Android emulator → `http://10.0.2.2:8000`; real device → your PC's LAN IP).
 
-### Android internet permission
-After `flutter create`, ensure `android/app/src/main/AndroidManifest.xml` has, above
-`<application>`:
-```xml
-<uses-permission android:name="android.permission.INTERNET"/>
-```
-(Flutter adds this for debug automatically; add it so **release** builds can reach the API.)
-
-## Pointing at a different API
-Edit `lib/config.dart`:
-- **Production (default):** `apiBase = 'https://createcart-api.vercel.app'` — works on a real device out of the box.
-- **Local API:** Android **emulator** → `http://10.0.2.2:8000`; real device on your Wi-Fi → `http://<your-PC-LAN-IP>:8000` (and run the API with CORS allowing all / your origin).
+## Configuration prerequisites
+- **Google Sign-In** needs an **Android OAuth client** in Google Cloud for package
+  `in.createcart.brahmana_app` with the signing **SHA-1** (debug SHA-1 for debug
+  builds). The web client id is wired as `serverClientId` in `config.dart`.
+- **Razorpay** keys live **server-side** on the API (`RAZORPAY_KEY_ID` /
+  `RAZORPAY_KEY_SECRET`); the app only receives the public `key_id` from `/checkout`.
+- **No secrets** are stored in the app — only public client-side values.
 
 ## Notes
-- Built and verified by code review; compile/run requires the Flutter toolchain
-  (not available in the authoring environment) — use the steps above in Android Studio / CLI.
-- Adding a slider image? It's driven by the **website's** `img/slider/manifest.json`,
-  so updating the site updates the app's hero automatically.
+- App **display name**: "Brahmana Naivedyam". Android **applicationId**:
+  `in.createcart.brahmana_app` (kept stable so the OAuth client + installed identity don't change).
+- Maps use keyless **OpenStreetMap (Nominatim)**; swap to Google Places by editing `location_service.dart`.
+
+## Related repos
+- **[createcart-api](https://github.com/createcart/createcart-api)** — the backend this app calls.
+- **[createcart-sdks](https://github.com/createcart/createcart-sdks)** — the libraries powering it.
+- **[brahmana-naivedyam](https://github.com/createcart/brahmana-naivedyam)** — the website (same backend).
