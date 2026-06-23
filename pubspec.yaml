@@ -1,0 +1,25 @@
+name: brahmana_app
+description: Brahmana Naivedyam storefront — Flutter client for the CreateCart API.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0                 # REST client to createcart-api
+  provider: ^6.1.2            # state management (cart)
+  google_fonts: ^6.2.1       # Bricolage Grotesque + Plus Jakarta Sans
+  shared_preferences: ^2.2.3 # persist the guest cart id (+ session later)
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0            # menu loading skeletons
+  url_launcher: ^6.2.6      # call / WhatsApp contact
+  flutter_animate: ^4.5.0   # declarative animations
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
