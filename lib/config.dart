@@ -23,6 +23,10 @@ class AppConfig {
   static const String phone = '+917675856767';
   static const String whatsapp = '917675856767';
 
+  /// Google "write a review" link (same Place ID as the website).
+  static const String reviewUrl =
+      'https://search.google.com/local/writereview?placeid=ChIJaY537AWTyzsRk6SIAelEjn4';
+
   /// Google OAuth WEB client id — used as `serverClientId` so the ID token's
   /// audience matches what the API verifies (same client id as the website).
   /// NOTE: native sign-in also needs an *Android* OAuth client in Google Cloud

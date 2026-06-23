@@ -81,7 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         // ── review pill ──
         Center(
-          child: Container(
+          child: GestureDetector(
+            onTap: () => _launch(AppConfig.reviewUrl),
+            child: Container(
             margin: const EdgeInsets.only(bottom: 14),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
@@ -100,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text('Write a Review', style: TextStyle(fontWeight: FontWeight.w700)),
               ],
             ),
+          ),
           ),
         ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.3),
 
