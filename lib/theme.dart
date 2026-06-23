@@ -23,7 +23,6 @@ ThemeData buildTheme() {
     primary: Brand.saffron,
     secondary: Brand.leaf,
     surface: Colors.white,
-    background: Brand.cream,
     brightness: Brightness.light,
   );
 
@@ -48,7 +47,7 @@ ThemeData buildTheme() {
       elevation: 0,
       foregroundColor: Brand.ink,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(

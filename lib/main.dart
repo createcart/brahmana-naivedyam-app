@@ -42,8 +42,6 @@ class RootShell extends StatefulWidget {
 class _RootShellState extends State<RootShell> {
   int _index = 0;
 
-  static const _titles = ['Home', 'Menu', 'Orders'];
-
   @override
   Widget build(BuildContext context) {
     final count = context.watch<CartModel>().count;
