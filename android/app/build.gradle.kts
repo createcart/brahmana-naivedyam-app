@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "in.createcart.brahmana_app"
+    namespace = "in.createcart.brahmana_naivedyam_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "in.createcart.brahmana_app"
+        applicationId = "in.createcart.brahmana_naivedyam_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
