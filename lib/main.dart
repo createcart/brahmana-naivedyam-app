@@ -43,14 +43,39 @@ class RootShell extends StatefulWidget {
   State<RootShell> createState() => _RootShellState();
 }
 
-class _RootShellState extends State<RootShell> {
+class _RootShellState extends State<RootShell> with WidgetsBindingObserver {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back to the app -> pull a fresh menu (no caching).
+    if (state == AppLifecycleState.resumed) {
+      context.read<CartModel>().refreshMenuSilently();
+    }
+  }
+
+  void _select(int i) {
+    setState(() => _index = i);
+    if (i == 1) context.read<CartModel>().refreshMenuSilently(); // opening Menu
+  }
 
   @override
   Widget build(BuildContext context) {
     final count = context.watch<CartModel>().count;
     final pages = [
-      HomeScreen(onBrowse: () => setState(() => _index = 1)),
+      HomeScreen(onBrowse: () => _select(1)),
       const MenuScreen(),
       const OrdersScreen(),
     ];
@@ -95,7 +120,7 @@ class _RootShellState extends State<RootShell> {
               final r = await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const CartScreen()),
               );
-              if (r == 'menu' && mounted) setState(() => _index = 1);
+              if (r == 'menu' && mounted) _select(1);
             },
           ),
           const SizedBox(width: 4),
@@ -118,7 +143,7 @@ class _RootShellState extends State<RootShell> {
           const PoweredByBar(),
           NavigationBar(
             selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
+            onDestinationSelected: _select,
             destinations: const [
               NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
               NavigationDestination(icon: Icon(Icons.restaurant_menu_outlined), selectedIcon: Icon(Icons.restaurant_menu), label: 'Menu'),

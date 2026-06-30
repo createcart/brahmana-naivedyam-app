@@ -28,17 +28,20 @@ class CreateCartApi {
   Uri _u(String path) => Uri.parse('$base/api/$tenant$path');
   Uri _c(String path) => Uri.parse('$base/api/$tenant/carts/$cartId$path');
 
+  // Always fetch fresh — never serve a cached menu/cart (stock & prices are live).
+  static const _noCache = {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'};
+
   Future<dynamic> _get(Uri u) async =>
-      _handle(await http.get(u, headers: {'Accept': 'application/json'}));
+      _handle(await http.get(u, headers: {'Accept': 'application/json', ..._noCache}));
 
   Future<dynamic> _post(Uri u, [Map<String, dynamic>? body]) async => _handle(
         await http.post(u,
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json', ..._noCache},
             body: body == null ? null : jsonEncode(body)),
       );
 
-  Future<dynamic> _getAuthed(Uri u, String token) async =>
-      _handle(await http.get(u, headers: {'Accept': 'application/json', 'X-Auth-Token': token}));
+  Future<dynamic> _getAuthed(Uri u, String token) async => _handle(await http.get(u,
+      headers: {'Accept': 'application/json', 'X-Auth-Token': token, ..._noCache}));
 
   dynamic _handle(http.Response r) {
     if (r.statusCode >= 200 && r.statusCode < 300) {
