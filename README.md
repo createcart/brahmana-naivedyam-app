@@ -12,7 +12,7 @@ Flutter app ──HTTPS──► createcart-api ──► Supabase (Postgres)
 
 ## Features
 - **Home** — auto-scrolling hero (bundled, never cropped), brand, Call / WhatsApp, tappable logo → Home, "Write a Review" → Google.
-- **Menu** — live items from the API, search + **category filters** + "Available now", **optimistic add / +/−** (instant), shimmer loading.
+- **Menu** — live items from the API, search + **category filters** + "Available now", **optimistic add / +/−** (instant), shimmer loading. **Always fresh** — no caching; auto-refreshes when you open Menu or resume the app, so admin stock/price changes appear right away.
 - **Cart** — line items, live totals, quantity steppers; checkout or order on WhatsApp.
 - **Checkout** — delivery details with a **location picker**: *Use my current location* (GPS) or **map search** (OpenStreetMap), pinned lat/lng sent with the order. **Razorpay** payment (test mode).
 - **Sign in with Google** (native) — account menu in the app bar.
@@ -55,7 +55,7 @@ out of the box. For a local API, edit `AppConfig.apiBase` in `lib/config.dart`
 
 ## Configuration prerequisites
 - **Google Sign-In** needs an **Android OAuth client** in Google Cloud for package
-  `in.createcart.brahmana_app` with the signing **SHA-1** (debug SHA-1 for debug
+  `in.createcart.brahmana_naivedyam_app` with the signing **SHA-1** (debug SHA-1 for debug
   builds). The web client id is wired as `serverClientId` in `config.dart`.
 - **Razorpay** keys live **server-side** on the API (`RAZORPAY_KEY_ID` /
   `RAZORPAY_KEY_SECRET`); the app only receives the public `key_id` from `/checkout`.
@@ -63,7 +63,7 @@ out of the box. For a local API, edit `AppConfig.apiBase` in `lib/config.dart`
 
 ## Notes
 - App **display name**: "Brahmana Naivedyam". Android **applicationId**:
-  `in.createcart.brahmana_app` (kept stable so the OAuth client + installed identity don't change).
+  `in.createcart.brahmana_naivedyam_app` (kept stable so the OAuth client + installed identity don't change).
 - Maps use keyless **OpenStreetMap (Nominatim)**; swap to Google Places by editing `location_service.dart`.
 
 ## Related repos
