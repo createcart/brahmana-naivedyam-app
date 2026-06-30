@@ -48,6 +48,17 @@ class CartModel extends ChangeNotifier {
     }
   }
 
+  /// Re-fetch the menu in the background (no shimmer) so stock/price changes
+  /// made in the admin show up without the customer pulling to refresh.
+  Future<void> refreshMenuSilently() async {
+    try {
+      menu = await _api.listItems();
+      notifyListeners();
+    } catch (_) {
+      // keep showing the last good menu on a transient failure
+    }
+  }
+
   /// Exposed for the checkout flow (checkout / verifyPayment use the same cart).
   CreateCartApi get api => _api;
 
